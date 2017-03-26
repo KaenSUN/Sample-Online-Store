@@ -1,0 +1,209 @@
+<html id="main">
+<head>
+	<title>Catalog</title>
+    <link rel="stylesheet" type="text/css"  href="style.css">
+</head>
+<body onload="forward(); reloadCart();">
+	<iframe name="formSending" width="0" height="0" frameborder="0"></iframe>
+	<!-- <button onclick="unset();reloadCart();">unset session</button>
+	<p> This button is for debug purpose only.</p> -->
+	<div id="Title">
+		<h1>Game Catalog</h1><Br>
+	</div>
+	<div class="catalogNavigation">
+		<button onclick="forward()">Next Page</button>
+		<button onclick="backward()">Previous Page</button>
+	</div>
+	<div class="catalogPage">
+		<ul style="list-style: none;" id="CatalogContent">
+		</ul>
+	</div>
+	
+	<div class="ShoppingCartRegion" onload="reloadCart()">
+		<h1>Your Shopping Cart: </h1>
+		<table>
+			<thead>
+				<th>Name</th>
+				<th>Description</th>
+				<th>Image</th>
+				<th>Price</th>
+				<th>Quantity</th>
+			</thead>
+			<tbody  id="ShoppingCartContent">
+			</tbody>
+		</table>
+	</div>
+	<button onclick="checkout()">checkout</button>
+	
+	<script type="text/javascript">
+		var lastRecord=-2;
+		
+		function forward(){
+			if(lastRecord+2>=8) {
+				lastRecord=6;
+			}else{
+				lastRecord+=2;
+			}
+			var xmlhttp;
+			if(window.XMLHttpRequest){
+				xmlhttp=new XMLHttpRequest();
+			}else{
+				xmlhttp=new ActiveXObject("Microsoft.XMLHttp");
+			}
+			xmlhttp.onreadystatechange=function(){
+				if(xmlhttp.readyState==4 && xmlhttp.status == 200){
+					var Content = document.getElementById("CatalogContent");
+					txt="";
+					json = JSON.parse(xmlhttp.responseText);
+					
+					for(i=0;i<json.Catalog.length;i++){
+				      	txt = txt + "<li>"
+								  + "<div class=\"Catalog\" id=" + json.Catalog[i]["itemID"] + ">";
+						txt = txt + "<h2>" + json.Catalog[i]["itemName"] + "</h2><br>"
+								  + "<img src=\"" + json.Catalog[i]["itemImage"] +"\" width=\"160\" height=\"130\"/><br>"
+					              + "<h3>This game is about " + json.Catalog[i]["itemDescription"] + "</h3>"								  
+								  + "<p>$ "  + json.Catalog[i]["itemPrice"] + " USD</p>"
+								  + "</div>"
+								  + "<button onclick=\"addToCart("+json.Catalog[i]["itemID"]+"); reloadCart();\">Add to Cart</button>"
+								  + "</li>";
+				  }
+                  
+                  Content.innerHTML = txt;
+					
+				}
+			}
+			xmlhttp.open("GET", "serverProcessing.php?action=load&lastRecord="+lastRecord,true);
+			xmlhttp.send();
+		}
+	
+		function backward(){
+			if(lastRecord-2<0) {
+				lastRecord=0;
+			}else{
+				lastRecord-=2;
+			}
+			
+			var xmlhttp;
+			if(window.XMLHttpRequest){
+				xmlhttp=new XMLHttpRequest();
+			}else{
+				xmlhttp=new ActiveXObject("Microsoft.XMLHttp");
+			}
+			xmlhttp.onreadystatechange=function(){
+				if(xmlhttp.readyState==4 && xmlhttp.status == 200){
+					var Content = document.getElementById("CatalogContent");
+					txt="";
+					json = JSON.parse(xmlhttp.responseText);
+					
+					for(i=0;i<json.Catalog.length;i++){
+				      	txt = txt + "<li>"
+								  + "<div class=\"Catalog\" id=" + json.Catalog[i]["itemID"] + ">";
+								  
+
+						txt = txt + "<h2>" + json.Catalog[i]["itemName"] + "</h2><br>"
+								  + "<img src=\"" + json.Catalog[i]["itemImage"] +"\" width=\"160\" height=\"130\"/><br>"
+					              + "<h3>This game is about " + json.Catalog[i]["itemDescription"] + "</h3>"								  
+								  + "<p>$ "  + json.Catalog[i]["itemPrice"] + " USD</p>"
+								  + "</div>"
+								  + "<button onclick=\"addToCart("+json.Catalog[i]["itemID"]+"); reloadCart();\">Add to Cart</button>"
+								  + "</li>";
+				  }
+                  
+                  Content.innerHTML = txt;
+					
+				}
+			}
+			xmlhttp.open("GET", "serverProcessing.php?action=load&lastRecord="+lastRecord,true);
+			xmlhttp.send();
+		}
+	</script>
+	<script type="text/javascript">
+		function addToCart(itemID){
+			var xmlhttp;
+			if(window.XMLHttpRequest){
+				xmlhttp=new XMLHttpRequest();
+			}else{
+				xmlhttp=new ActiveXObject("Microsoft.XMLHttp");
+			}
+			xmlhttp.open("GET", "serverProcessing.php?action=add&itemID="+itemID+"&Qty=1",true);
+			xmlhttp.send();
+			//xmlhttp.open("GET", "serverProcessing.php?action=update&Qty="+1+"&itemID="+itemID,true);
+			//xmlhttp.send();
+		}
+	</script>
+	<script type="text/javascript">
+		function reloadCart(){
+			var xmlhttp;
+			if(window.XMLHttpRequest){
+				xmlhttp=new XMLHttpRequest();
+			}else{
+				xmlhttp=new ActiveXObject("Microsoft.XMLHttp");
+			}
+			xmlhttp.onreadystatechange=function(){
+				if(xmlhttp.readyState==4 && xmlhttp.status == 200){
+					var table = document.getElementById("ShoppingCartContent");
+					txt="";
+					json = JSON.parse(xmlhttp.responseText);
+					
+					for(i=0;i<json.cart.length;i++){
+						txt=txt+"<tr>"
+							+"<td>"+json.cart[i]['itemName']+"</td>"
+							+"<td>"+json.cart[i]['itemDescription']+"</td>"
+							+"<td>"+"<img src=\""+json.cart[i]['itemImage']+"\" width=\"200\" height=\"100\"/>"+"</td>"
+							+"<td>$ "+json.cart[i]['itemPrice']+" USD</td>"
+							+"<td>"+"<form action=\"serverProcessing.php\" onsubmit=\"reloadCart()\" target=\"formSending\">"
+							+"<INPUT TYPE=\"HIDDEN\" NAME=\"action\" VALUE=\"update\">"
+							+"<INPUT TYPE=\"HIDDEN\" NAME=\"itemID\" VALUE=\""+json.cart[i]['itemID']+"\">"
+							+"Quantity: <input type=\"number\" name=\"Qty\" value=\""+json.cart[i]['Qty']+"\" min=\"0\">"
+							+"<input type=\"submit\" value=\"update quantity\" onclick=\"show(); reloadCart();\">"
+							+"</form></td>"
+							+"</tr>";
+					}
+					table.innerHTML=txt;
+				}
+				
+			}
+			xmlhttp.open("GET", "serverProcessing.php?action=reloadCart",true);
+			xmlhttp.send();
+			return false;
+		}
+	</script>
+	<script type="text/javascript">
+		function unset(){
+			var xmlhttp;
+			if(window.XMLHttpRequest){
+				xmlhttp=new XMLHttpRequest();
+			}else{
+				xmlhttp=new ActiveXObject("Microsoft.XMLHttp");
+			}
+			xmlhttp.open("GET", "serverProcessing.php?action=unset",true);
+			xmlhttp.send();
+			location.reload();
+		}
+	</script>
+	<script type="text/javascript">
+		function checkout(){
+			var xmlhttp;
+			if(window.XMLHttpRequest){
+				xmlhttp=new XMLHttpRequest();
+			}else{
+				xmlhttp=new ActiveXObject("Microsoft.XMLHttp");
+			}
+			xmlhttp.onreadystatechange=function(){
+				if(xmlhttp.readyState==4 && xmlhttp.status == 200){
+					var webpage = document.getElementById("main");
+					main.innerHTML=xmlhttp.responseText;
+				}
+				
+			}
+			xmlhttp.open("GET", "checkout.php",true);
+			xmlhttp.send();
+		}
+	</script>
+	<script>
+		function show(){
+			alert("Record Updated.");
+		}
+	</script>
+</body>
+</html>
